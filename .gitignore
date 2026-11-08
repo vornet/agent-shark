@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+TestResults/
+artifacts/
+*.user
+*.sqlite*
+*.pfx
+*.pcap
+*.pcapng
+.agent-shark/
+**/__pycache__/

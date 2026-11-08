@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\AgentShark.Core\AgentShark.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
+    <PackageReference Include="ModelContextProtocol" Version="2.4.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>agent-shark</ToolCommandName>
+    <PackageId>AgentShark.Mcp</PackageId>
+    <Description>Headless application network debugging for AI agents over MCP.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" CopyToPublishDirectory="PreserveNewest" Link="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="/" CopyToPublishDirectory="PreserveNewest" Link="LICENSE" />
+    <None Include="../../THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="/" CopyToPublishDirectory="PreserveNewest" Link="THIRD-PARTY-NOTICES.md" />
+    <None Include="../../THIRD-PARTY-LICENSES.txt" Pack="true" PackagePath="/" CopyToPublishDirectory="PreserveNewest" Link="THIRD-PARTY-LICENSES.txt" />
+  </ItemGroup>
+</Project>

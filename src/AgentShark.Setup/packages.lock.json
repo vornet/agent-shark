@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "Tomlyn": {
+        "type": "Direct",
+        "requested": "[2.11.0, )",
+        "resolved": "2.11.0",
+        "contentHash": "TCXTieJ1M/YsWqkh8c7+bSjNf1uJdW74LPdFRrGiRBtBFHJW/O3ZN42d/Tp/EoXyZ3fnVVag3I20tjg3PfukLQ=="
+      }
+    }
+  }
+}

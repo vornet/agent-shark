@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+if [ "${1:-}" = configure ] && [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then
+  if entry=$(getent passwd "$SUDO_USER"); then
+    profile_home=$(printf '%s' "$entry" | cut -d: -f6)
+    uid=$(printf '%s' "$entry" | cut -d: -f3)
+    mkdir -p /var/lib/agent-shark
+    printf '%s\n' "$uid" > /var/lib/agent-shark/setup-uid
+    if ! runuser -u "$SUDO_USER" -- env HOME="$profile_home" /opt/agent-shark/setup/AgentShark.Setup integrate --clients detected; then
+      echo 'AgentShark installed; review the user setup report for client configuration conflicts.' >&2
+    fi
+  fi
+else
+  echo 'AgentShark installed. Run /opt/agent-shark/setup/AgentShark.Setup integrate as your desktop user to connect detected clients.'
+fi
+exit 0

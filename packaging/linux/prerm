@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+if [ "${1:-}" = remove ] && [ -f /var/lib/agent-shark/setup-uid ]; then
+  uid=$(cat /var/lib/agent-shark/setup-uid)
+  if entry=$(getent passwd "$uid"); then
+    user=$(printf '%s' "$entry" | cut -d: -f1)
+    profile_home=$(printf '%s' "$entry" | cut -d: -f6)
+    runuser -u "$user" -- env HOME="$profile_home" /opt/agent-shark/setup/AgentShark.Setup remove --clients all || true
+  fi
+fi
+exit 0

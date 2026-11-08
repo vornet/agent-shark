@@ -1,0 +1,123 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version matching Directory.Build.props (verification only, does not publish)
+        default: '1.0.0'
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, rid: win-x64, smoke: true }
+          - { os: windows-latest, rid: win-arm64, smoke: false }
+          - { os: ubuntu-latest, rid: linux-x64, smoke: true }
+          - { os: ubuntu-24.04-arm, rid: linux-arm64, smoke: true }
+          - { os: macos-15-intel, rid: osx-x64, smoke: true }
+          - { os: macos-latest, rid: osx-arm64, smoke: true }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Resolve reviewed version
+        id: version
+        shell: pwsh
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          [xml]$properties = Get-Content Directory.Build.props
+          $version = [string]$properties.Project.PropertyGroup.Version
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") { throw 'Tag and source version do not match.' }
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch' -and $env:REQUESTED_VERSION -ne $version) { throw 'Requested version does not match source.' }
+          "value=$version" >> $env:GITHUB_OUTPUT
+      - run: dotnet restore --locked-mode
+      - run: dotnet format --no-restore --verify-no-changes
+      - run: dotnet test -c Release --no-restore --logger trx
+      - name: Install pinned installer compiler
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/install-inno.ps1
+      - name: Build installers and extension bundles
+        run: python scripts/package.py --rid ${{ matrix.rid }} --version ${{ steps.version.outputs.value }}
+      - name: Validate Claude Desktop extension manifest
+        run: npx --yes @anthropic-ai/mcpb@2.1.2 validate artifacts/packaging/${{ matrix.rid }}/mcpb/manifest.json
+      - name: Verify published binaries and isolated client integration
+        if: matrix.smoke
+        run: python scripts/smoke-release.py --payload artifacts/packaging/${{ matrix.rid }}/payload --version ${{ steps.version.outputs.value }}
+      - name: Exercise Windows installer and uninstaller
+        if: matrix.rid == 'win-x64'
+        shell: pwsh
+        run: ./scripts/test-windows-installer.ps1 -Version '${{ steps.version.outputs.value }}'
+      - name: Exercise native macOS package
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sudo installer -pkg artifacts/release/AgentShark-${{ steps.version.outputs.value }}-${{ matrix.rid }}.pkg -target /
+          python scripts/smoke-release.py --payload /usr/local/lib/agent-shark --version ${{ steps.version.outputs.value }}
+      - name: Exercise Debian package installation
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ./artifacts/release/AgentShark-${{ steps.version.outputs.value }}-${{ matrix.rid }}.deb
+          python scripts/smoke-release.py --payload /opt/agent-shark --version ${{ steps.version.outputs.value }}
+          sudo dpkg --remove agent-shark
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.rid }}
+          path: artifacts/release/*
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-tests-${{ matrix.rid }}
+          path: '**/TestResults/*.trx'
+  publish:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: artifacts/release
+          merge-multiple: true
+      - name: Verify and combine checksums
+        shell: bash
+        run: |
+          cd artifacts/release
+          cat *.sha256 | tr -d '\r' > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: 'artifacts/release/*'
+      - name: Publish complete release
+        shell: bash
+        run: |
+          gh release create "$GITHUB_REF_NAME" artifacts/release/* --verify-tag --draft --title "AgentShark ${GITHUB_REF_NAME#v}" --notes-file docs/release-notes-1.0.0.md
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest

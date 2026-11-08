@@ -1,0 +1,9 @@
+**/bin
+**/obj
+.git
+.agent-shark
+artifacts
+**/TestResults
+*.pcap
+*.pcapng
+*.pfx

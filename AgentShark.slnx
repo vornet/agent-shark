@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AgentShark.Core/AgentShark.Core.csproj" />
+    <Project Path="src/AgentShark.Server/AgentShark.Server.csproj" />
+    <Project Path="src/AgentShark.Setup/AgentShark.Setup.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AgentShark.Tests/AgentShark.Tests.csproj" />
+  </Folder>
+</Solution>

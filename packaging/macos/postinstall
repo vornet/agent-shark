@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+ROOT=/usr/local/lib/agent-shark
+user=$(stat -f '%Su' /dev/console)
+if [ "$user" != root ] && [ "$user" != loginwindow ] && [ -n "$user" ]; then
+  uid=$(id -u "$user")
+  printf '%s\n' "$uid" > "$ROOT/install-uid"
+  if ! sudo -H -u "$user" "$ROOT/setup/AgentShark.Setup" integrate --clients detected; then
+    echo 'AgentShark installed; review the user setup report for client configuration conflicts.' >&2
+  fi
+else
+  echo 'AgentShark installed. No active desktop user; run /usr/local/lib/agent-shark/setup/AgentShark.Setup integrate as the desktop user.'
+fi
+exit 0
