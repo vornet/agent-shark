@@ -14,7 +14,7 @@ The native installers are unsigned/unnotarized. SHA-256 checksums and GitHub pro
 
 ## Client configuration
 
-The setup utility discovers existing profile directories, adds only `agent-shark`, makes backups before edits and records ownership fingerprints. It preserves unrelated JSON/TOML properties and comments. Invalid configuration, symlinked paths, preexisting unmanaged entries and user-modified managed entries are left unchanged and reported. Uninstallation removes an entry only if it still matches its recorded fingerprint. Backups can contain secrets from other client configuration: they stay in the user's private setup directory.
+The setup utility discovers existing profile directories, adds only `agent-shark`, makes backups before edits and records ownership fingerprints. It preserves unrelated JSON/TOML properties and comments. Invalid configuration, links below trusted profile roots, preexisting unmanaged entries and user-modified managed entries are left unchanged and reported. Trusted roots may have standard platform aliases in their ancestors. Uninstallation removes an entry only if it still matches its recorded fingerprint. Backups can contain secrets from other client configuration: they stay in the user's private setup directory.
 
 | Client ID | Configuration |
 | --- | --- |

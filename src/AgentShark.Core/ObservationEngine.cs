@@ -98,9 +98,13 @@ public sealed class ObservationEngine : IAsyncDisposable
     {
         string full = Path.GetFullPath(path);
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        if (!_options.ImportRoots.Any(root => full.StartsWith(Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)) + Path.DirectorySeparatorChar, comparison)))
+        string? trustedRoot = _options.ImportRoots.Select(root => Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)))
+            .Where(root => full.StartsWith(root + Path.DirectorySeparatorChar, comparison)).OrderByDescending(root => root.Length).FirstOrDefault();
+        if (trustedRoot == null)
             throw new ArgumentException("Import path is outside configured ImportRoots.");
-        for (FileSystemInfo? item = new FileInfo(full); item != null; item = item is FileInfo file ? file.Directory : ((DirectoryInfo)item).Parent)
+        // The administrator-selected root may live below a platform alias such as macOS /var.
+        // Reject links in the untrusted relative path, not in ancestors of that trusted root.
+        for (FileSystemInfo? item = new FileInfo(full); item != null && item.FullName.Length > trustedRoot.Length; item = item is FileInfo file ? file.Directory : ((DirectoryInfo)item).Parent)
             if ((item.Attributes & FileAttributes.ReparsePoint) != 0) throw new ArgumentException("Symbolic links and reparse points are not allowed for capture imports.");
         return full;
     }

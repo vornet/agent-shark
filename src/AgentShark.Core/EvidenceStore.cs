@@ -45,7 +45,7 @@ public sealed class EvidenceStore : IDisposable
         if (OperatingSystem.IsWindows()) Directory.CreateDirectory(options.DataDirectory);
         else Directory.CreateDirectory(options.DataDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         try { _lease = new FileStream(Path.Combine(options.DataDirectory, "engine.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); }
-        catch (IOException ex) when ((ex.HResult & 0xffff) is 11 or 32 or 33) { throw new StoreInUseException("Evidence directory is already owned by another server instance.", ex); }
+        catch (IOException ex) when ((ex.HResult & 0xffff) is 11 or 32 or 33 or 35) { throw new StoreInUseException("Evidence directory is already owned by another server instance.", ex); }
         _connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = Path.Combine(options.DataDirectory, "evidence.sqlite"), Pooling = false }.ToString());
         try { _connection.Open(); }
         catch { _lease.Dispose(); _connection.Dispose(); throw; }

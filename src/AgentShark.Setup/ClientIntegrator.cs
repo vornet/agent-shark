@@ -39,7 +39,7 @@ public sealed class ClientIntegrator(SetupPaths paths)
             if (!selected) { results.Add(new(profile.Id, profile.ConfigPath, "skipped", "No detected profile, or client not selected.")); continue; }
             try
             {
-                RejectLinks(profile.ConfigPath);
+                RejectLinks(profile.ConfigPath, profile.Id == "codex" ? paths.CodexHome : profile.Id is "claude-desktop" or "vscode" ? paths.Roaming : paths.Home);
                 bool existed = File.Exists(profile.ConfigPath);
                 string original = existed ? Read(profile.ConfigPath) : profile.Format == "toml" ? "" : "{}\n";
                 string container = profile.Format == "vscode" ? "servers" : "mcpServers";
@@ -119,9 +119,10 @@ public sealed class ClientIntegrator(SetupPaths paths)
         return File.ReadAllText(path, new UTF8Encoding(false, true));
     }
 
-    private static void RejectLinks(string path)
+    private static void RejectLinks(string path, string trustedRoot)
     {
-        for (FileSystemInfo? item = new FileInfo(path); item != null; item = item is FileInfo file ? file.Directory : ((DirectoryInfo)item).Parent)
+        int rootLength = Path.TrimEndingDirectorySeparator(Path.GetFullPath(trustedRoot)).Length;
+        for (FileSystemInfo? item = new FileInfo(path); item != null && item.FullName.Length > rootLength; item = item is FileInfo file ? file.Directory : ((DirectoryInfo)item).Parent)
             if (item.Exists && (item.Attributes & FileAttributes.ReparsePoint) != 0) throw new IOException("Setup does not edit symbolic-link or reparse-point configuration paths.");
     }
 

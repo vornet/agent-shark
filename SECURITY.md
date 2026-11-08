@@ -10,7 +10,7 @@ AgentShark is a local MCP stdio server, not a remotely exposed service. It has t
 - Exact hostname allowlists do not pin DNS responses. Allowing a hostname authorizes its resolved addresses and any valid port. Configure IP destinations when address pinning is required.
 - TLS interception is explicit. Its temporary CA must be trusted by the target application through that application's scoped configuration. Never disable certificate validation globally. Upstream validation remains enabled. Optional custom upstream trust replaces platform roots for this proxy instance, retains hostname checking and disables revocation checking for that explicitly configured development/private CA.
 - On Windows, Schannel requires transient user key containers for generated leaf certificates. They are released on certificate disposal; forced process termination can prevent orderly OS-resource cleanup. AgentShark does not intentionally persist CA private keys or export them through tools.
-- Imports are constrained to configured roots; symbolic links/reparse points are rejected. Configure roots controlled by the same trusted account. The path checks are not a defense against a hostile same-account process racing filesystem changes.
+- Imports are constrained to configured roots; symbolic links/reparse points within those roots are rejected. Explicitly trusted roots can have platform aliases in their ancestors, such as macOS `/var`. Configure roots controlled by the same trusted account. The path checks are not a defense against a hostile same-account process racing filesystem changes.
 
 ## Data handling
 
